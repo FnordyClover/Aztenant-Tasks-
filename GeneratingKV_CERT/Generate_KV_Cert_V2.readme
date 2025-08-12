@@ -1,0 +1,94 @@
+Generate_KV_Cert_V2.ps1 – Azure Key Vault Certificate Generation & App Registration Upload
+
+Overview
+
+This PowerShell script automates the end-to-end creation, retrieval, and assignment of an X.509 certificate for use with Azure App Registrations. It is designed to work with Azure Key Vault and Microsoft Graph to eliminate the need for manual certificate creation and upload.
+
+Primary Use Case:
+	•	Automating authentication for applications without storing client secrets in plaintext.
+	•	Supporting certificate-based authentication for service principals (e.g., for automation scripts, CI/CD, or secure access packages).
+
+⸻
+
+Features
+	1.	Creates or reuses a Key Vault certificate
+	•	Uses a self-signed certificate generated directly in Azure Key Vault.
+	•	Configurable subject name, key type, key size, and validity period.
+	2.	Waits for Key Vault to fully provision the certificate
+	•	Ensures both the public certificate and secret are available before proceeding.
+	3.	Downloads and exports the certificate
+	•	Saves the .pfx and .cer files to the specified output directory.
+	4.	Adds the certificate to the specified Azure App Registration
+	•	Uses Microsoft Graph API to upload the public certificate for the application (client ID).
+
+⸻
+
+Prerequisites
+	•	PowerShell 7+ (recommended)
+	•	Azure PowerShell modules:
+
+Install-Module Az.KeyVault
+Install-Module Az.Accounts
+
+
+	•	Microsoft Graph PowerShell module:
+
+Install-Module Microsoft.Graph.Applications
+
+
+	•	Permissions:
+	•	Ability to create and manage certificates in Azure Key Vault.
+	•	Microsoft Graph API Application.ReadWrite.All permission for managing App Registrations.
+
+⸻
+
+Parameters & Variables
+
+Edit these variables at the top of the script:
+
+Variable	Description
+$vault	Name of the Azure Key Vault.
+$kvCertName	Key Vault object name for the certificate (letters, digits, hyphens only).
+$subjectCN	Subject CN for the certificate.
+$appId	Application (client) ID of the App Registration.
+$objectId	Service Principal Object ID.
+$outDir	Output directory for exported certificate files. Defaults to script directory.
+
+
+⸻
+
+How It Works
+	1.	Create Certificate in Key Vault
+	•	Checks if the specified certificate already exists.
+	•	If not found, creates it using a defined certificate policy.
+	2.	Wait for Provisioning
+	•	Polls Key Vault until both the secret (PFX) and the public certificate are available.
+	•	Timeout of 3 minutes.
+	3.	Export Certificates
+	•	Retrieves the Base64-encoded PFX from Key Vault and writes it to disk.
+	•	Extracts the public .cer file as well.
+	4.	Upload to Azure App Registration
+	•	Reads the .cer file and encodes it.
+	•	Calls Microsoft Graph Add-MgApplicationKey or Update-MgApplication to add it as a new key credential.
+
+⸻
+
+Example Usage
+
+# Run the script after updating variables
+.\Generate_KV_Cert_V2.ps1
+
+
+⸻
+
+Security Notes
+	•	The exported .pfx contains the private key — secure it appropriately.
+	•	Consider using SecureString or Azure DevOps secure file storage for .pfx files.
+	•	The script uses a self-signed cert for convenience; for production, integrate with a trusted CA if needed.
+
+⸻
+
+Future Enhancements
+	•	Automatic Renewal: Trigger regeneration and re-upload 30 days before expiration.
+	•	Integration with CI/CD: Use GitHub Actions or Azure DevOps pipelines for fully automated key rotation.
+	•	Enhanced Logging: Send operational logs to Azure Monitor or Log Analytics for auditing.￼
